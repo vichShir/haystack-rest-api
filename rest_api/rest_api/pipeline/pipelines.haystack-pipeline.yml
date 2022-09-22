@@ -30,8 +30,6 @@ components:    # define all the building-blocks for Pipeline
       model_name_or_path: amberoad/bert-multilingual-passage-reranking-msmarco
   - name: TextFileConverter
     type: TextConverter
-  - name: PDFFileConverter
-    type: PDFToTextConverter
   - name: Preprocessor
     type: PreProcessor
     params:
@@ -46,7 +44,7 @@ components:    # define all the building-blocks for Pipeline
     type: FileTypeClassifier
 
 pipelines:
-  - name: query    # a sample extractive-qa Pipeline
+  - name: query
     nodes:
       - name: ESRetriever
         inputs: [Query]
@@ -62,10 +60,8 @@ pipelines:
         inputs: [File]
       - name: TextFileConverter
         inputs: [FileTypeClassifier.output_1]
-      - name: PDFFileConverter
-        inputs: [FileTypeClassifier.output_2]
       - name: Preprocessor
-        inputs: [PDFFileConverter, TextFileConverter]
+        inputs: [TextFileConverter]
       - name: DPRRetriever
         inputs: [Preprocessor]
       - name: DocumentStore
