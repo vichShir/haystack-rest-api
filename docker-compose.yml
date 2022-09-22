@@ -1,10 +1,10 @@
 version: "3"
 services:
   haystack-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: "deepset/haystack-cpu:latest"
+    build: .
+      #context: .
+      #dockerfile: Dockerfile
+    #image: "deepset/haystack-cpu:latest"
     # Mount custom Pipeline YAML and custom Components.
     # volumes:
     #   - ./rest_api/pipeline:/home/user/rest_api/pipeline
