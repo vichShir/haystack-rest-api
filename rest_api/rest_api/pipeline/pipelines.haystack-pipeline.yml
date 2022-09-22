@@ -6,18 +6,28 @@ components:    # define all the building-blocks for Pipeline
   - name: DocumentStore
     type: ElasticsearchDocumentStore
     params:
+      analyzer: portuguese
+      embedding_dim: 1024
+      similarity: cosine
       host: localhost
-  - name: Retriever
+  - name: ESRetriever
     type: BM25Retriever
     params:
-      document_store: DocumentStore    # params can reference other components defined in the YAML
-      top_k: 5
-  - name: Reader       # custom-name for the component; helpful for visualization & debugging
-    type: FARMReader    # Haystack Class name for the component
+      document_store: DocumentStore
+  - name: DPRRetriever
+    type: EmbeddingRetriever
     params:
-      model_name_or_path: deepset/roberta-base-squad2
-      context_window_size: 500
-      return_no_answer: true
+      document_store: DocumentStore
+      embedding_model: rufimelo/Legal-SBERTimbau-sts-large-ma-v2
+      model_format: sentence_transformers
+      top_k: 30
+  - name: JoinResults
+    type: JoinDocuments
+    params: {}
+  - name: Ranker
+    type: SentenceTransformersRanker
+    params:
+      model_name_or_path: amberoad/bert-multilingual-passage-reranking-msmarco
   - name: TextFileConverter
     type: TextConverter
   - name: PDFFileConverter
@@ -25,18 +35,27 @@ components:    # define all the building-blocks for Pipeline
   - name: Preprocessor
     type: PreProcessor
     params:
+      clean_empty_lines: True
+      clean_whitespace: True
+      clean_header_footer: False
       split_by: word
-      split_length: 1000
+      split_length: 100
+      split_respect_sentence_boundary: True
+      language: pt
   - name: FileTypeClassifier
     type: FileTypeClassifier
 
 pipelines:
   - name: query    # a sample extractive-qa Pipeline
     nodes:
-      - name: Retriever
+      - name: ESRetriever
         inputs: [Query]
-      - name: Reader
-        inputs: [Retriever]
+      - name: DPRRetriever
+        inputs: [Query]
+      - name: JoinResults
+        inputs: [ESRetriever, DPRRetriever]
+      - name: Ranker
+        inputs: [JoinResults]
   - name: indexing
     nodes:
       - name: FileTypeClassifier
@@ -47,7 +66,7 @@ pipelines:
         inputs: [FileTypeClassifier.output_2]
       - name: Preprocessor
         inputs: [PDFFileConverter, TextFileConverter]
-      - name: Retriever
+      - name: DPRRetriever
         inputs: [Preprocessor]
       - name: DocumentStore
-        inputs: [Retriever]
+        inputs: [DPRRetriever]
