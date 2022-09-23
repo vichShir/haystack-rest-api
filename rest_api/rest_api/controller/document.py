@@ -14,6 +14,7 @@ from haystack.nodes import PreProcessor
 
 from rest_api.utils import get_app, get_pipelines
 from rest_api.config import LOG_LEVEL
+from rest_api.config import FILE_UPLOAD_PATH
 from rest_api.schema import FilterRequest
 
 
@@ -110,4 +111,4 @@ def write_documents(file: UploadFile = File(...)):
     docs_default = preprocessor.process(documents)
 
     document_store.write_documents(docs_default)
-    return {"message": f"Successfully uploaded {file.filename}"}
+    return f"Successfully uploaded {file.filename}"
