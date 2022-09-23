@@ -32,22 +32,3 @@ services:
     restart: on-failure
     environment:
       - discovery.type=single-node
-  ui:
-    build:
-      context: ui
-      dockerfile: Dockerfile
-    image: "deepset/haystack-streamlit-ui:latest"
-    ports:
-      - 8501:8501
-    restart: on-failure
-    environment:
-      - API_ENDPOINT=http://haystack-api:8000
-      - EVAL_FILE=eval_labels_example.csv
-      # The value fot the following variables will be read from the host, if present.
-      # They can also be temporarily set for docker-compose, for example:
-      # DISABLE_FILE_UPLOAD=1 DEFAULT_DOCS_FROM_RETRIEVER=5 docker-compose up
-      - DISABLE_FILE_UPLOAD
-      - DEFAULT_QUESTION_AT_STARTUP
-      - DEFAULT_DOCS_FROM_RETRIEVER
-      - DEFAULT_NUMBER_OF_ANSWERS
-    command: "/bin/bash -c 'sleep 15 && python -m streamlit run ui/webapp.py'"
