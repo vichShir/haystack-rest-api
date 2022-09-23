@@ -1,10 +1,12 @@
 from typing import List
 
+import pandas as pd
 import logging
 
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, UploadFile, File
 from haystack.document_stores import BaseDocumentStore
 from haystack.schema import Document
+from haystack.nodes import PreProcessor
 
 from rest_api.utils import get_app, get_pipelines
 from rest_api.config import LOG_LEVEL
@@ -54,3 +56,54 @@ def delete_documents(filters: FilterRequest):
     """
     document_store.delete_documents(filters=filters.filters)
     return True
+
+
+@router.post("/documents/insert_csv", response_model=str)
+def write_documents(file: UploadFile = File(...)):
+
+    # Clear document store
+    document_store.delete_documents()
+
+    # Load file
+    file_path: str = ''
+    try:
+        file_path = Path(FILE_UPLOAD_PATH) / f"{uuid.uuid4().hex}_{file.filename}"
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    finally:
+        file.file.close()
+
+    # Open csv
+    df = pd.read_csv(file_path)
+    df.rename(columns={
+        'DESCRIÇÃO LONGA': 'descricao',
+        'TAGS': 'tags',
+        'CATEGORIA': 'categoria',
+        'NOME DA STARTUP': 'title'
+    }, inplace=True)
+    df['text'] = df['descricao'] + ' ' + df['tags'] + ' ' + df['categoria'] + ' | Nome da startup: ' + df['title']
+    df = df[['title', 'text']]
+    df.fillna(value="", inplace=True)
+
+    titles = list(df["title"].values)
+    texts = list(df["text"].values)
+
+    # Create to haystack document format
+    documents = []
+    for title, text in zip(titles, texts):
+        documents.append(Document(content=text, meta={"name": title or ""}))
+
+    # Preprocessing
+    preprocessor = PreProcessor(
+        clean_empty_lines=True,
+        clean_whitespace=True,
+        clean_header_footer=False,
+        split_by="word",
+        split_length=100,
+        split_respect_sentence_boundary=True,
+        language='pt'
+    )
+    docs_default = preprocessor.process(documents)
+
+    document_store.write_documents(docs_default)
+    return {"message": f"Successfully uploaded {file.filename}"}
