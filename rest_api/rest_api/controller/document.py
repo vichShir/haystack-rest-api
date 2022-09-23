@@ -119,7 +119,7 @@ def write_documents(file: UploadFile = File(...)):
 @router.post("/documents/update_embeddings", response_model=bool)
 def update_embeddings():
     # Find nodes names
-    retriever = indexing_pipeline.get_nodes_by_class(EmbeddingRetriever)
+    retriever = indexing_pipeline.get_node('DPRRetriever')
 
     # Update the embeddings in the document store to use the retriever.
     document_store.update_embeddings(retriever)
