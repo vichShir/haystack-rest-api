@@ -8,9 +8,10 @@ import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, APIRouter, UploadFile, File
+from haystack import Pipeline
 from haystack.document_stores import BaseDocumentStore
 from haystack.schema import Document
-from haystack.nodes import PreProcessor
+from haystack.nodes import PreProcessor, EmbeddingRetriever
 
 from rest_api.utils import get_app, get_pipelines
 from rest_api.config import LOG_LEVEL
@@ -25,6 +26,7 @@ logger = logging.getLogger("haystack")
 router = APIRouter()
 app: FastAPI = get_app()
 document_store: BaseDocumentStore = get_pipelines().get("document_store", None)
+indexing_pipeline: Pipeline = get_pipelines().get("indexing_pipeline", None)
 
 
 @router.post("/documents/get_by_filters", response_model=List[Document], response_model_exclude_none=True)
@@ -112,3 +114,13 @@ def write_documents(file: UploadFile = File(...)):
 
     document_store.write_documents(docs_default)
     return f"Successfully uploaded {file.filename}"
+
+
+@router.post("/documents/update_embeddings", response_model=bool)
+def update_embeddings():
+    # Find nodes names
+    retriever = indexing_pipeline.get_nodes_by_class(EmbeddingRetriever)
+
+    # Update the embeddings in the document store to use the retriever.
+    document_store.update_embeddings(retriever)
+    return True
