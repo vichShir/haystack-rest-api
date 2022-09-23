@@ -3,6 +3,10 @@ from typing import List
 import pandas as pd
 import logging
 
+import shutil
+import uuid
+from pathlib import Path
+
 from fastapi import FastAPI, APIRouter, UploadFile, File
 from haystack.document_stores import BaseDocumentStore
 from haystack.schema import Document
