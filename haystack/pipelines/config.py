@@ -265,12 +265,14 @@ def validate_schema(pipeline_config: Dict, strict_version_check: bool = False, e
     validate_config_strings(pipeline_config)
 
     # Check that the extras are respected
+    '''
     extras_in_config = pipeline_config.get("extras", None)
     if (not extras and extras_in_config) or (extras and extras_in_config not in extras):
         raise PipelineConfigError(
             f"Cannot use this class to load a YAML with 'extras: {extras_in_config}'. "
             "Use the proper class, for example 'RayPipeline'."
         )
+    '''
 
     # Check for the version manually (to avoid validation errors)
     pipeline_version = pipeline_config.get("version", None)
