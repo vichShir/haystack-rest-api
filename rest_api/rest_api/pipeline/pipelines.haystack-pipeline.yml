@@ -53,8 +53,8 @@ pipelines:
         inputs: [Query]
       - name: JoinResults
         inputs: [ESRetriever, DPRRetriever]
-      - name: Ranker
-        inputs: [JoinResults]
+      #- name: Ranker
+      #  inputs: [JoinResults]
   - name: indexing
     nodes:
       - name: FileTypeClassifier
