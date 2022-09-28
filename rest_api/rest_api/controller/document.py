@@ -1,6 +1,7 @@
 from typing import List
 
 import pandas as pd
+import numpy as np
 import logging
 
 import shutil
@@ -68,6 +69,8 @@ def delete_documents(filters: FilterRequest):
 @router.post("/documents/insert_csv", response_model=str)
 def write_documents(file: UploadFile = File(...)):
 
+    import ast
+
     # Clear document store
     document_store.delete_documents()
 
@@ -80,6 +83,14 @@ def write_documents(file: UploadFile = File(...)):
     finally:
         file.file.close()
 
+    # Open csv with embeddings
+    df = pd.read_csv(file_path)
+    df.rename(columns={'Unnamed: 0': 'index'}, inplace=True)
+    df['embedding'] = df.embedding.apply(lambda s: np.array(list(ast.literal_eval(s))))
+
+    docs_default = df.apply(lambda row: Document(id=row[0], content=row[1], meta={"name": row[3], "_split_id": row[4]}, embedding=row[5]), axis=1)
+
+    '''
     # Open csv
     df = pd.read_csv(file_path)
     df.rename(columns={
@@ -111,6 +122,7 @@ def write_documents(file: UploadFile = File(...)):
         language='pt'
     )
     docs_default = preprocessor.process(documents)
+    '''
 
     document_store.write_documents(docs_default)
     return f"Successfully uploaded {file.filename}"
